@@ -1,8 +1,146 @@
-import "./App.css";
-import Home from "./components/Home";
-
-function App() {
-  return <Home />;
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-export default App;
+body{
+    background:linear-gradient(135deg,#0f172a,#1e3a8a,#2563eb);
+    min-height:100vh;
+    color:white;
+}
+
+#root{
+    width:100%;
+}
+
+.container{
+    width:90%;
+    max-width:1200px;
+    margin:auto;
+    padding:30px;
+}
+
+h1{
+    text-align:center;
+    font-size:42px;
+    margin-bottom:10px;
+}
+
+h2{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+p{
+    text-align:center;
+    margin-bottom:20px;
+    font-size:17px;
+}
+
+button{
+    background:#2563eb;
+    color:white;
+    border:none;
+    padding:12px 20px;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:16px;
+    font-weight:bold;
+    transition:.3s;
+}
+
+button:hover{
+    background:#1d4ed8;
+    transform:translateY(-3px);
+}
+
+input,select{
+    width:300px;
+    padding:12px;
+    border-radius:8px;
+    border:none;
+    outline:none;
+    margin:8px;
+    font-size:16px;
+}
+
+.card{
+    background:white;
+    color:black;
+    width:420px;
+    margin:20px auto;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 10px 25px rgba(0,0,0,.25);
+    transition:.3s;
+}
+
+.card:hover{
+    transform:scale(1.02);
+}
+
+.menu-card{
+    background:white;
+    color:black;
+    width:500px;
+    margin:20px auto;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 8px 20px rgba(0,0,0,.3);
+}
+
+.home-btn{
+    width:260px;
+    margin:10px;
+}
+
+.rank1{
+    color:gold;
+}
+
+.rank2{
+    color:silver;
+}
+
+.rank3{
+    color:#cd7f32;
+}
+
+.back-btn{
+    margin-top:20px;
+    margin-left:20px;
+}
+
+.stats-card{
+    background:white;
+    color:black;
+    width:220px;
+    display:inline-block;
+    margin:15px;
+    padding:20px;
+    border-radius:12px;
+    text-align:center;
+    box-shadow:0 8px 20px rgba(0,0,0,.3);
+}
+
+@media(max-width:768px){
+
+.menu-card{
+    width:95%;
+}
+
+.card{
+    width:95%;
+}
+
+input,select{
+    width:95%;
+}
+
+.home-btn{
+    width:90%;
+}
+
+}

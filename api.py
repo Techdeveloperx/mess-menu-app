@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime
 from db import connection
@@ -6,9 +6,13 @@ from db import connection
 app = Flask(__name__)
 CORS(app)
 
+# ======================================
 # Today's Menu
+# ======================================
+
 @app.route("/")
 def today_menu():
+
     cur = connection.cursor()
 
     today = datetime.now().strftime("%A")
@@ -34,9 +38,13 @@ def today_menu():
     return jsonify(menu)
 
 
+# ======================================
 # Weekly Menu
+# ======================================
+
 @app.route("/menu/<day>")
 def weekly_menu(day):
+
     cur = connection.cursor()
 
     cur.execute("""
@@ -59,6 +67,188 @@ def weekly_menu(day):
 
     return jsonify(menu)
 
+
+# ======================================
+# Rate Dish
+# ======================================
+
+@app.route("/rate", methods=["POST"])
+def rate_dish():
+
+    data = request.get_json()
+
+    student_name = data["student_name"]
+    registration_number = data["registration_number"]
+    dish_name = data["dish_name"]
+    rating = data["rating"]
+
+    cur = connection.cursor()
+
+    # Duplicate Check
+    cur.execute("""
+        SELECT *
+        FROM ratings
+        WHERE registration_number=%s
+        AND dish_name=%s
+    """, (registration_number, dish_name))
+
+    already = cur.fetchone()
+
+    if already:
+        cur.close()
+
+        return jsonify({
+            "message": "You have already rated this meal."
+        })
+
+    cur.execute("""
+        INSERT INTO ratings
+        (student_name, registration_number, dish_name, rating)
+        VALUES(%s,%s,%s,%s)
+    """, (
+        student_name,
+        registration_number,
+        dish_name,
+        rating
+    ))
+
+    connection.commit()
+    cur.close()
+
+    return jsonify({
+        "message": "Rating Submitted Successfully"
+    })
+
+
+# ======================================
+# Top Rated Dishes
+# ======================================
+
+@app.route("/top-dishes")
+def top_dishes():
+
+    cur = connection.cursor()
+
+    cur.execute("""
+        SELECT
+            dish_name,
+            ROUND(AVG(rating),2)
+        FROM ratings
+        GROUP BY dish_name
+        ORDER BY AVG(rating) DESC
+        LIMIT 5;
+    """)
+
+    rows = cur.fetchall()
+    cur.close()
+
+    dishes = []
+
+    for row in rows:
+        dishes.append({
+            "dish_name": row[0],
+            "average_rating": float(row[1])
+        })
+
+    return jsonify(dishes)
+
+
+# ======================================
+# Bottom Rated Dishes
+# ======================================
+
+@app.route("/bottom-dishes")
+def bottom_dishes():
+
+    cur = connection.cursor()
+
+    cur.execute("""
+    SELECT
+        dish_name,
+        ROUND(AVG(rating),2) AS average_rating
+    FROM ratings
+    GROUP BY dish_name
+    HAVING AVG(rating) <= 3
+    ORDER BY AVG(rating) ASC;
+""")
+
+    rows = cur.fetchall()
+    cur.close()
+
+    dishes = []
+
+    for row in rows:
+        dishes.append({
+            "dish_name": row[0],
+            "average_rating": float(row[1])
+        })
+
+    return jsonify(dishes)
+
+
+# ======================================
+# Dashboard Statistics
+# ======================================
+
+@app.route("/stats")
+def stats():
+
+    cur = connection.cursor()
+
+    cur.execute("SELECT COUNT(*) FROM ratings;")
+    total_ratings = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(DISTINCT registration_number) FROM ratings;")
+    total_students = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(DISTINCT dish_name) FROM ratings;")
+    total_dishes = cur.fetchone()[0]
+
+    cur.close()
+
+    return jsonify({
+        "total_ratings": total_ratings,
+        "total_students": total_students,
+        "total_dishes": total_dishes
+    })
+
+
+# ======================================
+# Search Student Ratings
+# ======================================
+
+@app.route("/student/<regno>")
+def student_rating(regno):
+
+    cur = connection.cursor()
+
+    cur.execute("""
+        SELECT
+            student_name,
+            dish_name,
+            rating
+        FROM ratings
+        WHERE registration_number=%s;
+    """, (regno,))
+
+    rows = cur.fetchall()
+    cur.close()
+
+    ratings = []
+
+    for row in rows:
+        ratings.append({
+            "student_name": row[0],
+            "dish_name": row[1],
+            "rating": row[2]
+        })
+
+    return jsonify(ratings)
+
+
+# ======================================
+# Run Server
+# ======================================
 
 if __name__ == "__main__":
     app.run(debug=True)
