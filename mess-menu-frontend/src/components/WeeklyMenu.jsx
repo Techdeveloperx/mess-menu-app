@@ -10,23 +10,59 @@ function WeeklyMenu() {
   }, [day]);
 
   const getMenu = async (selectedDay) => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/menu/${selectedDay}`
+      );
 
-    const response = await fetch(
-      `http://127.0.0.1:5000/menu/${selectedDay}`
-    );
+      const data = await response.json();
+      setMenu(data);
 
-    const data = await response.json();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-    setMenu(data);
+  const getEmoji = (meal) => {
+    switch (meal) {
+      case "Breakfast":
+        return "🍳";
+      case "Lunch":
+        return "🍛";
+      case "Snacks":
+        return "☕";
+      case "Dinner":
+        return "🌙";
+      default:
+        return "🍽️";
+    }
+  };
+
+  const getClass = (meal) => {
+    switch (meal) {
+      case "Breakfast":
+        return "breakfast";
+      case "Lunch":
+        return "lunch";
+      case "Snacks":
+        return "snacks";
+      case "Dinner":
+        return "dinner";
+      default:
+        return "";
+    }
   };
 
   return (
 
     <div className="container">
 
-      <h1>📖 Weekly Menu</h1>
+      <div className="hero">
+        <h1>📅 Weekly Menu</h1>
+        <p>Select a day to view the complete mess menu</p>
+      </div>
 
-      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+      <div className="day-selector">
 
         <select
           value={day}
@@ -43,31 +79,38 @@ function WeeklyMenu() {
 
       </div>
 
-      {menu.length === 0 ? (
+      <div className="today-grid">
 
-        <h2 style={{ textAlign: "center" }}>
-          No Menu Available
-        </h2>
+        {menu.length === 0 ? (
 
-      ) : (
+          <h2>No Menu Available</h2>
 
-        menu.map((item, index) => (
+        ) : (
 
-          <div className="menu-card" key={index}>
+          menu.map((item, index) => (
 
-            <h2>{item.meal_type}</h2>
+            <div
+              key={index}
+              className={`today-card ${getClass(item.meal_type)}`}
+            >
 
-            <hr />
+              <div className="meal-icon">
+                {getEmoji(item.meal_type)}
+              </div>
 
-            <br />
+              <h2>{item.meal_type}</h2>
 
-            <h3>{item.dish}</h3>
+              <div className="line"></div>
 
-          </div>
+              <h3>{item.dish}</h3>
 
-        ))
+            </div>
 
-      )}
+          ))
+
+        )}
+
+      </div>
 
     </div>
 

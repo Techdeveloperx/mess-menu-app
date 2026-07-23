@@ -7,127 +7,356 @@ function RateDish() {
   const [menu, setMenu] = useState([]);
   const [ratings, setRatings] = useState({});
 
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [popup, setPopup] = useState({
+    show: false,
+    success: true,
+    title: "",
+    message: "",
+  });
+
   useEffect(() => {
     getTodayMenu();
   }, []);
 
   const getTodayMenu = async () => {
 
-    const response = await fetch("http://127.0.0.1:5000/");
+    try {
 
-    const data = await response.json();
+      setLoading(true);
 
-    setMenu(data);
+      const response = await fetch(
+        "http://127.0.0.1:5000/"
+      );
+
+      const data = await response.json();
+
+      setMenu(data);
+
+    } catch (error) {
+
+      console.log(error);
+
+      setPopup({
+        show: true,
+        success: false,
+        title: "Error",
+        message: "Unable to load today's menu.",
+      });
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  };
+
+  const closePopup = () => {
+
+    setPopup({
+      ...popup,
+      show: false,
+    });
 
   };
 
   const submitRating = async (dishName) => {
 
-    if (studentName === "") {
-      alert("Enter Student Name");
+    if (studentName.trim() === "") {
+
+      setPopup({
+        show: true,
+        success: false,
+        title: "Missing Information",
+        message: "Please enter Student Name.",
+      });
+
       return;
     }
 
-    if (registrationNumber === "") {
-      alert("Enter Registration Number");
+    if (registrationNumber.trim() === "") {
+
+      setPopup({
+        show: true,
+        success: false,
+        title: "Missing Information",
+        message: "Please enter Registration Number.",
+      });
+
       return;
     }
 
     if (!ratings[dishName]) {
-      alert("Please Select Rating");
+
+      setPopup({
+        show: true,
+        success: false,
+        title: "Rating Required",
+        message: "Please select a rating.",
+      });
+
       return;
     }
 
-    const response = await fetch("http://127.0.0.1:5000/rate", {
+    try {
 
-      method: "POST",
+      setSubmitting(true);
 
-      headers: {
-        "Content-Type": "application/json",
-      },
+      const response = await fetch(
+        "http://127.0.0.1:5000/rate",
+        {
+          method: "POST",
 
-      body: JSON.stringify({
+          headers: {
+            "Content-Type": "application/json",
+          },
 
-        student_name: studentName,
-        registration_number: registrationNumber,
-        dish_name: dishName,
-        rating: ratings[dishName],
+          body: JSON.stringify({
+            student_name: studentName,
+            registration_number: registrationNumber,
+            dish_name: dishName,
+            rating: ratings[dishName],
+          }),
+        }
+      );
 
-      }),
+      const data = await response.json();
 
-    });
+      const success =
+        !data.message.toLowerCase().includes("already");
 
-    const data = await response.json();
+      setPopup({
+        show: true,
+        success: success,
+        title: success ? "Success" : "Already Rated",
+        message: data.message,
+      });
 
-    alert(data.message);
+      if (success) {
+
+        setRatings((prev) => ({
+          ...prev,
+          [dishName]: 0,
+        }));
+
+      }
+
+    } catch (error) {
+
+      setPopup({
+        show: true,
+        success: false,
+        title: "Server Error",
+        message: "Something went wrong.",
+      });
+
+    } finally {
+
+      setSubmitting(false);
+
+    }
 
   };
+
+  const getEmoji = (meal) => {
+
+    switch (meal) {
+
+      case "Breakfast":
+        return "🍳";
+
+      case "Lunch":
+        return "🍛";
+
+      case "Snacks":
+        return "☕";
+
+      case "Dinner":
+        return "🌙";
+
+      default:
+        return "🍽️";
+
+    }
+
+  };
+
+  const getClass = (meal) => {
+
+    switch (meal) {
+
+      case "Breakfast":
+        return "breakfast";
+
+      case "Lunch":
+        return "lunch";
+
+      case "Snacks":
+        return "snacks";
+
+      case "Dinner":
+        return "dinner";
+
+      default:
+        return "";
+
+    }
+
+  };
+
+  if (loading) {
+
+    return (
+
+      <div className="loader-container">
+
+        <div className="loader"></div>
+
+        <div className="loader-text">
+          Loading Today's Menu...
+        </div>
+
+      </div>
+
+    );
+
+  }
 
   return (
 
     <div className="container">
 
-      <h1>⭐ Rate Today's Menu</h1>
+      <div className="hero">
 
-      <div style={{ textAlign: "center" }}>
+        <h1>⭐ Rate Today's Food</h1>
+
+        <p>
+          Your feedback helps improve the mess experience.
+        </p>
+
+      </div>
+
+      <div className="student-form">
 
         <input
           type="text"
-          placeholder="Enter Student Name"
+          placeholder="👤 Student Name"
           value={studentName}
-          onChange={(e) => setStudentName(e.target.value)}
+          onChange={(e) =>
+            setStudentName(e.target.value)
+          }
         />
 
-        <br />
-
         <input
           type="text"
-          placeholder="Enter Registration Number"
+          placeholder="🆔 Registration Number"
           value={registrationNumber}
-          onChange={(e) => setRegistrationNumber(e.target.value)}
+          onChange={(e) =>
+            setRegistrationNumber(e.target.value)
+          }
         />
 
       </div>
 
-      {menu.map((item, index) => (
+      <div className="today-grid">
 
-        <div className="menu-card" key={index}>
+        {menu.map((item, index) => (
 
-          <h2>{item.meal_type}</h2>
-
-          <hr />
-
-          <br />
-
-          <h3>{item.dish}</h3>
-
-          <br />
-
-          <select
-            onChange={(e) =>
-              setRatings({
-                ...ratings,
-                [item.dish]: e.target.value,
-              })
-            }
+          <div
+            key={index}
+            className={`today-card ${getClass(item.meal_type)}`}
           >
-            <option value="">Select Rating</option>
-            <option value="1">⭐ 1</option>
-            <option value="2">⭐⭐ 2</option>
-            <option value="3">⭐⭐⭐ 3</option>
-            <option value="4">⭐⭐⭐⭐ 4</option>
-            <option value="5">⭐⭐⭐⭐⭐ 5</option>
-          </select>
 
-          <br /><br />
+            <div className="meal-icon">
 
-          <button onClick={() => submitRating(item.dish)}>
-            Submit Rating
-          </button>
+              {getEmoji(item.meal_type)}
+
+            </div>
+
+            <h2>{item.meal_type}</h2>
+
+            <div className="line"></div>
+
+            <h3>{item.dish}</h3>
+
+            <div className="star-rating">
+
+              {[1,2,3,4,5].map((star)=>(
+                                <span
+                  key={star}
+                  className={
+                    ratings[item.dish] >= star
+                      ? "star active-star"
+                      : "star"
+                  }
+                  onClick={() =>
+                    setRatings({
+                      ...ratings,
+                      [item.dish]: star,
+                    })
+                  }
+                >
+                  ⭐
+                </span>
+              ))}
+
+            </div>
+
+            <button
+              className="submit-btn"
+              disabled={submitting}
+              onClick={() => submitRating(item.dish)}
+            >
+              {submitting ? "Submitting..." : "Submit Rating"}
+            </button>
+
+          </div>
+
+        ))}
+
+      </div>
+
+      {popup.show && (
+
+        <div className="popup-overlay">
+
+          <div className="popup">
+
+            <div className="popup-icon">
+              {popup.success ? "✅" : "❌"}
+            </div>
+
+            <h2>{popup.title}</h2>
+
+            <p>{popup.message}</p>
+
+            <button
+              className="popup-btn"
+              onClick={() => {
+
+                closePopup();
+
+                if (popup.success) {
+
+                  setStudentName("");
+                  setRegistrationNumber("");
+                  setRatings({});
+
+                }
+
+              }}
+            >
+              OK
+            </button>
+
+          </div>
 
         </div>
 
-      ))}
+      )}
 
     </div>
 

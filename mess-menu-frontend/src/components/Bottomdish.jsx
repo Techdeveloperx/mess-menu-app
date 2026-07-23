@@ -9,48 +9,67 @@ function BottomDish() {
   }, []);
 
   const getBottomDishes = async () => {
+    try {
 
-    const response = await fetch("http://127.0.0.1:5000/bottom-dishes");
+      const response = await fetch("http://127.0.0.1:5000/bottom-dishes");
 
-    const data = await response.json();
+      const data = await response.json();
 
-    setDishes(data);
+      setDishes(data);
 
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
 
     <div className="container">
 
-      <h1>📉 Bottom Rated Dishes</h1>
+      <div className="hero">
 
-      {dishes.length === 0 ? (
+        <h1>📉 Lowest Rated Dishes</h1>
 
-        <h2>No Low Rated Dishes Found 🎉</h2>
+        <p>Dishes that need improvement</p>
 
-      ) : (
+      </div>
 
-        dishes.map((dish, index) => (
+      <div className="leaderboard">
 
-          <div className="card" key={index}>
+        {dishes.length === 0 ? (
 
-            <h2>
-              {index + 1}. {dish.dish_name}
-            </h2>
+          <h2>No Ratings Available</h2>
 
-            <hr />
+        ) : (
 
-            <br />
+          dishes.map((dish, index) => (
 
-            <h3>Average Rating</h3>
+            <div className="bottom-card" key={index}>
 
-            <h2>⭐ {dish.average_rating}</h2>
+              <div className="leader-rank">
 
-          </div>
+                😕
+              </div>
 
-        ))
+              <div className="leader-info">
 
-      )}
+                <h2>{dish.dish_name}</h2>
+
+                <p>
+
+                  ⭐ {Number(dish.average_rating).toFixed(1)} / 5
+
+                </p>
+
+              </div>
+
+            </div>
+
+          ))
+
+        )}
+
+      </div>
 
     </div>
 
