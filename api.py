@@ -1,3 +1,5 @@
+import csv
+from flask import Response
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime
@@ -195,23 +197,51 @@ def stats():
 
     cur = connection.cursor()
 
+    # Total Ratings
     cur.execute("SELECT COUNT(*) FROM ratings;")
     total_ratings = cur.fetchone()[0]
 
+    # Total Students
     cur.execute("SELECT COUNT(DISTINCT registration_number) FROM ratings;")
     total_students = cur.fetchone()[0]
 
+    # Total Rated Dishes
     cur.execute("SELECT COUNT(DISTINCT dish_name) FROM ratings;")
     total_dishes = cur.fetchone()[0]
+
+    # Highest Rated Dish
+    cur.execute("""
+        SELECT dish_name
+        FROM ratings
+        GROUP BY dish_name
+        ORDER BY AVG(rating) DESC
+        LIMIT 1;
+    """)
+
+    top = cur.fetchone()
+    top_dish = top[0] if top else "N/A"
+
+    # Lowest Rated Dish
+    cur.execute("""
+        SELECT dish_name
+        FROM ratings
+        GROUP BY dish_name
+        ORDER BY AVG(rating) ASC
+        LIMIT 1;
+    """)
+
+    bottom = cur.fetchone()
+    bottom_dish = bottom[0] if bottom else "N/A"
 
     cur.close()
 
     return jsonify({
         "total_ratings": total_ratings,
         "total_students": total_students,
-        "total_dishes": total_dishes
+        "total_dishes": total_dishes,
+        "top_dish": top_dish,
+        "bottom_dish": bottom_dish
     })
-
 
 # ======================================
 # Search Student Ratings
@@ -246,9 +276,54 @@ def student_rating(regno):
     return jsonify(ratings)
 
 
+
+@app.route("/download-report")
+def download_report():
+
+    cur = connection.cursor()
+
+    cur.execute("""
+        SELECT student_name,
+               registration_number,
+               dish_name,
+               rating
+        FROM ratings
+        ORDER BY student_name;
+    """)
+
+    rows = cur.fetchall()
+    cur.close()
+
+    class Echo:
+        def write(self, value):
+            return value
+
+    def generate():
+        writer = csv.writer(Echo())
+
+        yield writer.writerow([
+            "Student Name",
+            "Registration Number",
+            "Dish Name",
+            "Rating"
+        ])
+
+        for row in rows:
+            yield writer.writerow(row)
+
+    return Response(
+        generate(),
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition":
+            "attachment; filename=ratings_report.csv"
+        }
+    )
 # ======================================
 # Run Server
 # ======================================
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+    
